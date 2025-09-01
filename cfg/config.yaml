@@ -380,6 +380,12 @@ target_mapping:
     - "controlplane"
     - "etcd"
     - "policies"
+  "cis-1.11":
+    - "master"
+    - "node"
+    - "controlplane"
+    - "etcd"
+    - "policies"
   "gke-1.0":
     - "master"
     - "node"
