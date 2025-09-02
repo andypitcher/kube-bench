@@ -93,7 +93,7 @@ groups:
         scored: true
 
       - id: 4.1.7
-        text: "Ensure that the certificate authorities file permissions are set to 600 or more restrictive (Manual)"
+        text: "Ensure that the certificate authorities file permissions are set to 644 or more restrictive (Manual)"
         audit: |
           CAFILE=$(ps -ef | grep kubelet | grep -v apiserver | grep -- --client-ca-file= | awk -F '--client-ca-file=' '{print $2}' | awk '{print $1}' | uniq)
           if test -z $CAFILE; then CAFILE=$kubeletcafile; fi
@@ -103,10 +103,10 @@ groups:
             - flag: "permissions"
               compare:
                 op: bitmask
-                value: "600"
+                value: "644"
         remediation: |
           Run the following command to modify the file permissions of the
-          --client-ca-file chmod 600 <filename>
+          --client-ca-file chmod 644 <filename>
         scored: false
 
       - id: 4.1.8
@@ -220,7 +220,7 @@ groups:
         scored: true
 
       - id: 4.2.4
-        text: "Verify that the --read-only-port argument is set to 0 (Manual)"
+        text: "Verify that if defined, the --read-only-port argument is set to 0 (Manual)"
         audit: "/bin/ps -fC $kubeletbin"
         audit_config: "/bin/cat $kubeletconf"
         tests:
@@ -452,6 +452,37 @@ groups:
         remediation: |
           Decide on an appropriate level for this parameter and set it,
           either via the --pod-max-pids command line parameter or the PodPidsLimit configuration file setting.
+        scored: false
+
+      - id: 4.2.14
+        text: "Ensure that the --seccomp-default parameter is set to true (Manual)"
+        audit: "/bin/ps -fC $kubeletbin"
+        audit_config: "/bin/cat $kubeletconf"
+        tests:
+          test_items:
+            - flag: --seccomp-default
+              path: '{.seccompDefault}'
+        remediation: |
+          Set the parameter, either via the --seccomp-default command line parameter or the
+          seccompDefault configuration file setting.
+          By default the seccomp profile is not enabled.
+        scored: false
+
+      - id: 4.2.15
+        text: "Ensure that the --IPAddressDeny is set to any (Manual)"
+        audit: "/bin/ps -fC $kubeletbin"
+        audit_config: "/bin/cat $kubeletconf"
+        tests:
+          test_items:
+            - flag: --IPAddressDeny
+              path: '{.IPAddressDeny}'
+        remediation: |
+         Configuring the setting IPAddressDeny=any will deny service to any IP address not specified in the complimentary setting IPAddressAllow configuration parameter (
+         IPAddressDeny=any
+         IPAddressAllow={{ kubelet_secure_addresses }}
+         *Note
+           kubelet_secure_addresses: "localhost link-local {{ kube_pods_subnets |regex_replace(',', ' ') }} {{ kube_node_addresses }} {{ loadbalancer_apiserver.address | default('')"
+         By default IPAddressDeny is not enabled.
         scored: false
 
   - id: 4.3
